@@ -1,0 +1,86 @@
+// tohle je uplne ultra hack. Prehrava to obrazky do MIDI.
+
+include "midi_selector.pixi"
+
+midi_dev = -1
+midi_port = 0
+
+mc = midi_open_client( "Pixi MIDI Client" )
+midi_selector( mc, MIDI_PORT_READ | MIDI_PORT_WRITE )
+
+clear()
+
+p = midi_open_port( mc, "My OUT port", midi_dev, MIDI_PORT_WRITE )
+
+file = file_dialog( "Select some file", "png", "fff" )
+// file = "test.png"
+
+img = load(file)
+
+set_pixel_size(3)
+
+MIDI_BASE = 0x24
+
+midi_event = new( 8, 1, INT8 )
+
+	x = 0 
+	
+	while( x < get_xsize(img) )
+	{
+		clear()
+		// co hrajeme
+		pixi( img, get_xsize(img) / 2, get_ysize(img) / 2 )
+		
+		// prehravac
+		line(x, 0, x, get_ysize(img), YELLOW)
+		frame()
+		
+		y = 0
+		while (y < get_ysize(img)) {
+			
+			if (x >0 && img[x-1, y]==BLACK && img[x,y]!=BLACK) {
+				midi_event[ 0 ] = 0x80 //Note OFF on channel 0
+					midi_event[ 1 ] = MIDI_BASE + y //Note
+					midi_event[ 2 ] = 0x7F //Velocity
+					midi_send_event( mc, p, midi_event, 3, get_ticks() )
+			}
+			
+			if (img[x, y] == BLACK) {
+				
+				midi_event[ 0 ] = 0x90 //Note ON on channel 0
+				midi_event[ 1 ] = MIDI_BASE + y //Note
+				midi_event[ 2 ] = 0x7F //Velocity
+				midi_send_event( mc, p, midi_event, 3, get_ticks() )
+			}
+			
+			
+			
+			y = y + 1
+		}
+		
+		sleep(500)
+		
+		// get_event()
+		// if EVT[ EVT_TYPE ] == EVT_QUIT { halt }
+		
+	    x = x + 1
+		
+	}
+	
+	
+	// umlcet
+	y=0
+	while (y < get_ysize(img)) {
+			
+			if (img[x-1, y]==BLACK) {
+				midi_event[ 0 ] = 0x80 //Note OFF on channel 0
+					midi_event[ 1 ] = MIDI_BASE + y //Note
+					midi_event[ 2 ] = 0x7F //Velocity
+					midi_send_event( mc, p, midi_event, 3, get_ticks() )
+			}
+			y = y + 1
+	}
+	sleep(100)
+
+midi_close_client( mc )
+remove(img)
