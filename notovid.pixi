@@ -6,16 +6,22 @@ midi_dev = -1
 midi_port = 0
 
 mc = midi_open_client( "Pixi MIDI Client" )
-midi_selector( mc, MIDI_PORT_READ | MIDI_PORT_WRITE )
+midi_selector( mc, MIDI_PORT_WRITE )
 
 clear()
 
 p = midi_open_port( mc, "My OUT port", midi_dev, MIDI_PORT_WRITE )
 
-file = file_dialog( "Select some file", "png", "fff" )
-// file = "test.png"
+selectfile:
+
+file = file_dialog( "Select PNG to play", "png", "" )
+if (file == -1) {
+	halt
+}
 
 img = load(file)
+
+playsong:
 
 set_pixel_size(3)
 
@@ -67,7 +73,7 @@ midi_event = new( 8, 1, INT8 )
 		
 	}
 	
-	
+	make_silence:
 	// umlcet
 	y=0
 	while (y < get_ysize(img)) {
@@ -81,6 +87,9 @@ midi_event = new( 8, 1, INT8 )
 			y = y + 1
 	}
 	sleep(100)
+	
+remove(img)
+
+goto selectfile
 
 midi_close_client( mc )
-remove(img)
